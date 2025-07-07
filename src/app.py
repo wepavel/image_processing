@@ -1,8 +1,6 @@
 """."""
-import os
 
 import flask
-from logging import getLogger
 
 import routers
 from base_sync.base_module import ModuleException
