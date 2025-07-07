@@ -8,10 +8,8 @@ import pika
 from pika import BlockingConnection, ConnectionParameters, PlainCredentials
 from pika.adapters.blocking_connection import BlockingChannel
 
-# from ..base_module import ClassesLoggerAdapter, ModuleException
 from ..base_module import ModuleException
 from logging import getLogger
-# from ..flask import FormatDumps
 from ..models.rabbit import (
     RabbitFullConfig,
     RabbitConsumerConfig,
