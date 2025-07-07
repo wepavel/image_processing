@@ -1,0 +1,38 @@
+{
+	"rabbit_version":"4.0.3",
+	"rabbitmq_version":"4.0.3",
+	"users":[
+		{
+			"name":"admin",
+			"password_hash":"z2Tut8wb9jzr2aoVGReTI1phXQsPyxIIC7+/R0qaAZOOBEco",
+			"limits":{},
+			"tags":["administrator"]
+		}
+	],
+	"vhosts":[
+		{
+			"name":"/",
+			"limits":[],
+			"metadata":{
+				"description":"Default virtual host",
+				"tags":[]
+			}
+		}
+	],
+	"permissions":[
+		{
+			"user":"admin",
+			"vhost":"/",
+			"configure":".*",
+			"read":".*",
+			"write":".*"
+		}
+	],
+	"bindings":[],
+	"exchanges":[],
+	"global_parameters":[],
+	"parameters":[],
+	"policies":[],
+	"queues":[],
+	"topic_permissions":[]
+}

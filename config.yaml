@@ -1,0 +1,26 @@
+tmp_dir: /tmp
+
+pg:
+  host: postgres
+  port: 5432
+  user: postgres
+  password: postgres
+  database: database
+  schema: tasks
+
+rabbit:
+  host: rabbitmq
+  port: 5672
+  user: admin
+  password: administrator
+  queue_name: task_queue
+  exchange: image_tasks_exchange
+  routing_key: img_process
+
+image_requests:
+  host: files
+  port: 8001
+  schema: http
+  path_prefix: /api
+  chunk_size: 5242880
+

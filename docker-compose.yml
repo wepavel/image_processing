@@ -1,0 +1,52 @@
+services:
+  image-processing:
+    image: 'image-processing:latest'
+    depends_on:
+      - rabbitmq
+      - image-processing-worker
+    build:
+      context: ./
+    restart: always
+    volumes:
+      - ./config.yaml:/config.yaml
+      - ./src:/app/src
+    command: ["python", "app.py"]
+    ports:
+      - 8024:8001
+    networks:
+      - image-processing-net
+
+  rabbitmq:
+    image: rabbitmq:4.1.1-management
+    restart: always
+    volumes:
+      - ./rabbitmq:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./definitions.json:/etc/rabbitmq/definitions.json
+      - /etc/localtime:/etc/localtime:ro
+    expose:
+      - 5672
+    ports:
+      - 15672:15672
+    networks:
+      - image-processing-net
+
+  image-processing-worker:
+    image: 'image-processing-worker:latest'
+    restart: always
+    build:
+      context: ./
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./config.yaml:/config.yaml
+      - ./tmp:/tmp
+      - ./src:/app/src
+    command: ["python", "-u", "./scripts/tasks_worker.py"]
+    networks:
+      - image-processing-net
+
+networks:
+  image-processing-net:
+    external: true
+    name: image-processing-net
