@@ -59,6 +59,16 @@ class RabbitService:
             )
         )
         channel = connection.channel()
+        channel.exchange_declare(
+            exchange=self._config.exchange,
+            exchange_type='direct',
+            durable=True
+        )
+        channel.queue_declare(
+            queue=self._config.queue_name,
+            durable=True,
+            arguments={'x-max-priority': 5}
+        )
         channel.queue_bind(
             exchange=self._config.exchange,
             queue=self._config.queue_name,

@@ -114,9 +114,6 @@ class PgConnectionInj(metaclass=ThreadIsolatedSingleton):
                     connection.execute(statement)
 
                 BaseOrmMappedModel.REGISTRY.metadata.create_all(bind=connection)
-                # connection.run_callable(
-                #     BaseOrmMappedModel.REGISTRY.metadata.create_all
-                # )
 
         session_fabric = sessionmaker(engine, expire_on_commit=False)
         self._pg = sa.orm.scoped_session(session_fabric)
