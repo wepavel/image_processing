@@ -5,7 +5,7 @@ from datetime import datetime
 
 import sqlalchemy as sa
 
-from base_sync.base_module import ValuedEnum, BaseOrmMappedModel, Model
+from base_sync.base_module import ValuedEnum, BaseOrmMappedModel
 
 SCHEMA_NAME = 'tasks'
 
