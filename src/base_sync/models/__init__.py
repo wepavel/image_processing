@@ -6,4 +6,3 @@ from .rabbit import (
     TaskIdentMessageModel,
     JsonMessageModel
 )
-from .image_requests import ImageRequestsConfig

@@ -1,11 +1,7 @@
-import dataclasses as dc
-import typing as t
-
 import pika
 import sqlalchemy as sa
 from sqlalchemy.orm import Session as PGSession
 
-from base_sync.base_module import Model
 from base_sync.base_module import (
     sa_operator,
     ModuleException,
@@ -16,15 +12,7 @@ from models import ProcessingTask
 
 from logging import getLogger
 from datetime import datetime
-
-
-@dc.dataclass
-class CreationModel(Model):
-    """."""
-
-    image_id: str = dc.field()
-    function_type: str = dc.field()
-    function_args: t.Optional[dict] = dc.field(default_factory=dict)
+from models import CreationModel
 
 
 class TasksService:

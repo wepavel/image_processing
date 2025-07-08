@@ -1,9 +1,11 @@
 from base_sync.services import (
     RabbitService
 )
-from base_sync.services import (
-    ImageRequestsService,
-    ProcessAbstractFabric
+from services.file_storage import FileStorageService
+from services.calc import (
+    ProcessAbstractFactory,
+    ResolutionChangeService,
+    ProjectionChangeService
 )
 from config import config
 from services import (
@@ -11,6 +13,13 @@ from services import (
     TasksWorker,
 )
 from . import connections
+
+
+def process_factory() -> ProcessAbstractFactory:
+    process_factory = ProcessAbstractFactory()
+    process_factory.add_registry(ResolutionChangeService())
+    process_factory.add_registry(ProjectionChangeService())
+    return process_factory
 
 
 def rabbit() -> RabbitService:
@@ -26,15 +35,11 @@ def tasks_service() -> TasksService:
     )
 
 
-def process_fabric() -> ProcessAbstractFabric:
+def file_storage() -> FileStorageService:
     """."""
-    return ProcessAbstractFabric()
-
-
-def image_requests() -> ImageRequestsService:
-    """."""
-    return ImageRequestsService(
-        config=config.image_requests
+    return FileStorageService(
+        base_url=config.file_storage.base_url,
+        chunk_size=config.file_storage.chunk_size,
     )
 
 
@@ -44,6 +49,6 @@ def tasks_mule() -> TasksWorker:
         rabbit=rabbit(),
         pg_connection=connections.pg.acquire_session(),
         temp_dir=config.tmp_dir,
-        image_requests=image_requests(),
-        image_process_fabric=process_fabric()
+        file_storage=file_storage(),
+        image_process_factory=process_factory()
     )

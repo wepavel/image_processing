@@ -4,7 +4,7 @@ from base_sync.base_module import Model
 
 
 @dc.dataclass
-class ImageRequestsConfig(Model):
+class FileStorageConfig(Model):
     """."""
 
     host: str = dc.field(default='localhost')
@@ -12,3 +12,7 @@ class ImageRequestsConfig(Model):
     schema: str = dc.field(default='http')
     path_prefix: str = dc.field(default='/')
     chunk_size: int = dc.field(default=1024 * 1024 * 5)  # 5MB
+
+    @property
+    def base_url(self) -> str:
+        return f'{self.schema}://{self.host}:{self.port}/{self.path_prefix}'

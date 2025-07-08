@@ -28,5 +28,5 @@ def handle_app_exception(e: ModuleException):
 if __name__ == '__main__':
     app.run(
         host='0.0.0.0',
-        port=8001,
+        port=80,
     )

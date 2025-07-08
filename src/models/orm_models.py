@@ -1,11 +1,13 @@
 """."""
+
+import typing as t
 import dataclasses as dc
 import typing
 from datetime import datetime
 
 import sqlalchemy as sa
 
-from base_sync.base_module import ValuedEnum, BaseOrmMappedModel
+from base_sync.base_module import ValuedEnum, BaseOrmMappedModel, Model
 
 SCHEMA_NAME = 'tasks'
 
@@ -17,6 +19,15 @@ class TaskStatus(ValuedEnum):
     PROCESSING = 'processing'
     ERROR = 'error'
     DONE = 'done'
+
+
+@dc.dataclass
+class CreationModel(Model):
+    """."""
+
+    image_id: str = dc.field()
+    function_type: str = dc.field()
+    function_args: t.Optional[dict] = dc.field(default_factory=dict)
 
 
 @dc.dataclass

@@ -1,5 +1,6 @@
 import os.path
 import shutil
+import tempfile
 from datetime import datetime
 
 import sqlalchemy as sa
@@ -9,10 +10,8 @@ from base_sync.base_module import BaseMule, sa_operator
 from base_sync.base_module import ModuleException
 from base_sync.models import TaskIdentMessageModel
 from base_sync.services import RabbitService
-from base_sync.services import (
-    ImageRequestsService,
-    ProcessAbstractFabric
-)
+from services.file_storage import FileStorageService
+from services.calc import ProcessAbstractFactory
 from models import (
     TaskStatus,
     ProcessingTask,
@@ -28,48 +27,40 @@ class TasksWorker(BaseMule):
             rabbit: RabbitService,
             pg_connection: PGSession,
             temp_dir: str,
-            image_requests: ImageRequestsService,
-            image_process_fabric: ProcessAbstractFabric
+            file_storage: FileStorageService,
+            image_process_factory: ProcessAbstractFactory
     ):
         """Инициализация сервиса"""
         self._rabbit = rabbit
         self._pg = pg_connection
         self._temp_dir = temp_dir
         self._logger = getLogger(__name__)
-        self._image_requests = image_requests
-        self._image_process_fabric = image_process_fabric
-
-    def _work_dir(self, task_id: int) -> str:
-        """Создание временной папки"""
-        temp_dir = os.path.join(self._temp_dir, str(task_id))
-        os.makedirs(temp_dir, exist_ok=True)
-        return temp_dir
+        self._file_storage = file_storage
+        self._image_process_factory = image_process_factory
 
     def _handle(self, task: ProcessingTask):
         """Обработка задачи"""
         self._logger.info('Обработка задачи', extra={'task': task.task_id})
-        task = ProcessingTask.load(task.dump())
+        task.reload()
 
-        temp_dir = self._work_dir(task.task_id)
         try:
-            path = self._image_requests.save_image(task.image_id, temp_dir)
+            with tempfile.TemporaryDirectory(prefix=str(task.task_id)) as temp_dir:
+                path = self._file_storage.save_image(task.image_id, temp_dir)
 
-            img_processor = self._image_process_fabric.create(task.function_type)
+                img_processor = self._image_process_factory.get(task.function_type)
 
-            args = task.function_args.copy()
-            args['input_path'] = path
-            img_name = path.split('/')[-1]
-            new_img_name = img_name.split('.')[0] + '_processed.' + img_name.split('.')[1]
-            new_img_path = os.path.join(temp_dir, new_img_name)
-            args['output_path'] = new_img_path
+                img_name = os.path.basename(path)
+                name, ext = os.path.splitext(img_name)
+                new_img_name = f"{name}_processed{ext}"
+                new_img_path = os.path.join(temp_dir, new_img_name)
 
-            img_processor.process(**args)
+                img_processor.process(src_path=path, dest_path=new_img_path, params=task.function_args)
 
-            new_img_id = self._image_requests.upload_image(new_img_path)
+                new_img_id = self._file_storage.upload_image(new_img_path)
 
-            task.new_image_id = new_img_id
+                task.new_image_id = new_img_id
 
-            self._update_status(task, TaskStatus.DONE)
+                self._update_status(task, TaskStatus.DONE)
         except Exception as e:
             self._logger.critical(
                 'Ошибка обработки задачи',
@@ -119,20 +110,19 @@ class TasksWorker(BaseMule):
                 ).limit(1)
             ).scalar()
             if not task:
-                return
+                return None
 
-            task.status = TaskStatus.PROCESSING
-            task.updated_at = datetime.now()
-            self._pg.merge(task)
             return task.reload()
 
     def _handle_message(self, message: TaskIdentMessageModel, **_):
         """Обработка сообщения от брокера"""
         task_id = message.payload.task_id
-        task = self._get_task(task_id)
-        if not task:
+
+        if not (task := self._get_task(task_id)):
             self._logger.warning('Задача не найдена', extra={'task_id': task_id})
             return
+
+        self._update_status(task, TaskStatus.PROCESSING)
 
         try:
             self._handle(task)

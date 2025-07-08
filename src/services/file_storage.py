@@ -6,18 +6,18 @@ import random
 import string
 import re
 
-from ..models.image_requests import ImageRequestsConfig
 
-
-class ImageRequestsService:
+class FileStorageService:
     """."""
 
     def __init__(
             self,
-            config: ImageRequestsConfig,
+            base_url: str,
+            chunk_size: int,
     ):
         """."""
-        self._config = config
+        self._base_url = base_url
+        self._chunk_size = chunk_size
         self._logger = getLogger(__name__)
         self._session = requests.Session()
 
@@ -42,16 +42,15 @@ class ImageRequestsService:
         return ''.join(random.choices(charset, k=length))
 
     def _make_url(self, path: str) -> str:
-        return (f"{self._config.schema}://{self._config.host}:"
-                f"{self._config.port}{self._config.path_prefix.rstrip('/')}/{path.lstrip('/')}")
+        return (f"{self._base_url.rstrip('/')}/{path.lstrip('/')}")
 
     def save_image(self, image_id: str, dest_path: str) -> str:
         url = self._make_url(f'/files/{image_id}/download')
         response = self._session.get(url, stream=True)
 
         if not response.ok:
-            self._logger.error(f"Ошибка получения изображения {image_id}: {response.status_code}")
-            raise RuntimeError("Download failed")
+            self._logger.error(f'Ошибка получения изображения {image_id}: {response.status_code}')
+            raise RuntimeError('Download failed')
 
         cd = response.headers.get('Content-Disposition', '')
         base_name, ext = self._extract_filename_parts(cd)
@@ -59,7 +58,7 @@ class ImageRequestsService:
         save_path = os.path.join(dest_path, f"{image_id}{ext}")
 
         with open(save_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=self._config.chunk_size):
+            for chunk in response.iter_content(chunk_size=self._chunk_size):
                 if chunk:
                     f.write(chunk)
 
@@ -82,7 +81,7 @@ class ImageRequestsService:
             response = self._session.post(url, files=files)
 
         if not response.ok:
-            self._logger.error(f"Ошибка загрузки изображения {image_path}: {response.status_code}")
-            raise RuntimeError("Upload failed")
+            self._logger.error(f'Ошибка загрузки изображения {image_path}: {response.status_code}')
+            raise RuntimeError('Upload failed')
 
         return response.json().get('id', 'unknown')

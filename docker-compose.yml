@@ -4,15 +4,14 @@ services:
     depends_on:
       - rabbitmq
       - image-processing-worker
+      - files
     build:
       context: ./
     restart: always
     volumes:
-      - ./config.yaml:/config.yaml
-      - ./src:/app/src
-    command: ["python", "app.py"]
+      - /etc/localtime:/etc/localtime:ro
     ports:
-      - 8024:8001
+      - 8024:80
     networks:
       - image-processing-net
 
@@ -24,8 +23,6 @@ services:
       - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
       - ./definitions.json:/etc/rabbitmq/definitions.json
       - /etc/localtime:/etc/localtime:ro
-    expose:
-      - 5672
     ports:
       - 15672:15672
     networks:
@@ -38,15 +35,45 @@ services:
       context: ./
     depends_on:
       - rabbitmq
+      - files
     volumes:
-      - ./config.yaml:/config.yaml
-      - ./tmp:/tmp
-      - ./src:/app/src
+      - /etc/localtime:/etc/localtime:ro
     command: ["python", "-u", "./scripts/tasks_worker.py"]
+    networks:
+      - image-processing-net
+
+  files:
+    image: files:latest
+    depends_on:
+      - postgres
+    volumes:
+      - ./file_storage:/file_storage
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    ports:
+      - 8023:80
+    networks:
+      - image-processing-net
+
+  postgres:
+    image: postgres:17-bookworm
+    volumes:
+      - test_pgdata:/var/lib/postgresql/data/pgdata
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=postgres
+    restart: always
+    ports:
+      - 5434:5432
     networks:
       - image-processing-net
 
 networks:
   image-processing-net:
-    external: true
     name: image-processing-net
+
+volumes:
+  test_pgdata:

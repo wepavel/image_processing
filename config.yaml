@@ -17,9 +17,9 @@ rabbit:
   exchange: image_tasks_exchange
   routing_key: img_process
 
-image_requests:
+file_storage:
   host: files
-  port: 8001
+  port: 80
   schema: http
   path_prefix: /api
   chunk_size: 5242880
